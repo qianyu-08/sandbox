@@ -1,0 +1,58 @@
+- name: Analyze issue and repo
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const fs = require("fs");
+
+      const issue = context.payload.issue;
+      const title = issue.title.toLowerCase();
+      const body = issue.body?.toLowerCase() || "";
+
+      let repoHint = "";
+      try {
+        repoHint = fs.readFileSync("README.md", "utf8").toLowerCase();
+      } catch (e) {}
+
+      const bugKeywords = ["error", "bug", "crash", "exception", "fail", "not working"];
+      const featureKeywords = ["feature", "request", "add", "support", "want"];
+
+      const text = title + " " + body;
+
+      const bugScore = bugKeywords.filter(k => text.includes(k)).length;
+      const featureScore = featureKeywords.filter(k => text.includes(k)).length;
+
+      const specHints = ["should", "designed", "expected", "behavior"];
+      const specScore = specHints.filter(k => repoHint.includes(k)).length;
+
+      let label = "unknown";
+      let reply = "";
+
+      if (bugScore > featureScore) {
+        label = "bug";
+        reply = "バグ報告として確認しました。内容を精査します。";
+      } else if (featureScore > bugScore) {
+        label = "feature";
+        reply = "機能要望として確認しました。検討対象とします。";
+      } else if (specScore > 0) {
+        label = "spec-like";
+        reply = "仕様に基づく挙動の可能性があります。ドキュメントをご確認ください。";
+      } else {
+        label = "unclear";
+        reply = "内容を確認しました。追加情報があればお願いします。";
+      }
+
+      await github.rest.issues.addLabels({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: issue.number,
+        labels: [label]
+      });
+
+      await github.rest.issues.createComment({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        issue_number: issue.number,
+        body: `🤖 自動分類: **${label}**
+
+${reply}`
+      });
