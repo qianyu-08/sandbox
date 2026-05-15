@@ -3,7 +3,7 @@ name: Spec Checker
 on:
   issues:
     types: [opened]
-
+    
 permissions:
   issues: write
   contents: read
