@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SPA</title>
+</head>
+<body>
+
+<nav>
+  <a href="/#/home">Home</a>
+  <a href="/#/about">About</a>
+</nav>
+
+<div id="app"></div>
+
+<script>
+  const routes = {
+    "/home": "ホームだよ",
+    "/about": "自己紹介だよ"
+  };
+
+  function render() {
+    const hash = location.hash.replace("#", "") || "/home";
+    document.getElementById("app").textContent =
+      routes[hash] || "404ではなくSPA内404";
+  }
+
+  window.addEventListener("hashchange", render);
+  window.addEventListener("load", render);
+</script>
+
+</body>
+</html>
